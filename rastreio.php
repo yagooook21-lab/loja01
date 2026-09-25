@@ -34,10 +34,17 @@ $paid_statuses = ['APPROVED', 'PAID', 'PAGO', 'COMPLETED', 'RECEIVED', 'CONFIRME
 $is_paid = in_array($gateway_status, $paid_statuses, true) || strtoupper((string)($pix['status'] ?? '')) === 'PAGO' || (string)($_GET['confirmado'] ?? '') === '1';
 $status_label = $is_paid ? 'Pagamento Confirmado' : 'Aguardando Pagamento';
 $created_at = !empty($pix['data_criacao']) ? strtotime($pix['data_criacao']) : time();
-$delivery_days = 5;
-$delivery_date = date('d \d\e F', $created_at + ($delivery_days * 86400));
-$months = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'=>'abril','May'=>'maio','June'=>'junho','July'=>'julho','August'=>'agosto','September'=>'setembro','October'=>'outubro','November'=>'novembro','December'=>'dezembro'];
-$delivery_date = str_replace(array_keys($months), array_values($months), $delivery_date);
+
+$data_entrega = new DateTime();
+$data_entrega->setTimestamp($created_at);
+$dias_uteis = 0;
+while ($dias_uteis < 5) {
+    $data_entrega->modify('+1 day');
+    if ((int)$data_entrega->format('N') <= 5) $dias_uteis++;
+}
+$dias_semana_pt = ['', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado', 'domingo'];
+$meses_pt = ['', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+$delivery_date = $dias_semana_pt[(int)$data_entrega->format('N')] . ', ' . $data_entrega->format('j') . ' de ' . $meses_pt[(int)$data_entrega->format('n')];
 $nome_produto = $produto['nome'] ?? 'Produto';
 $valor_texto = trim((string)($pix['valor'] ?? $produto['valor'] ?? 0));
 if (strpos($valor_texto, ',') !== false) {
